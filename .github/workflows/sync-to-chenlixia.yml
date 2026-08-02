@@ -1,0 +1,32 @@
+# ============================================================
+# 自动同步：chenlijing(主) -> chenlixia(镜像)
+# 触发：每次 push 到 main 分支
+# 效果：
+#   1. chenlijing 的 GitHub Pages 自动重新部署（legacy 分支模式，平台内置）
+#   2. 本工作流把最新代码自动推送到 chenlixia -> chenlixia 的 Pages 随之自动部署
+#   即：一次提交，两个网站同步自动更新。
+# 安全：
+#   - 令牌存于 Actions secret（SYNC_TOKEN），加密存储，绝不进入仓库代码/前端
+#   - 使用 --force-with-lease：若 chenlixia 存在未同步的新提交则安全失败，绝不覆盖
+# ============================================================
+name: Auto-sync to chenlixia
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push mirror to chenlixia
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          git remote add chenlixia https://x-access-token:${SYNC_TOKEN}@github.com/chenliguan42057/chenlixia.git
+          git push --force-with-lease chenlixia main
