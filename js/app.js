@@ -122,7 +122,96 @@
     try { return JSON.parse(localStorage.getItem(key)) || def; }
     catch (e) { return def; }
   }
-  function set(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+  function set(key, val) {
+    localStorage.setItem(key, JSON.stringify(val));
+    if (window.__mintSync) window.__mintSync.schedule();
+  }
+
+  /* ---------- 云同步（数据存 GitHub 私有仓库，经云函数中转，前端零密钥） ---------- */
+  var SYNC = (function () {
+    var cfg = window.APP_CONFIG || {};
+    var urls = (cfg.WORKER_URLS && cfg.WORKER_URLS.length) ? cfg.WORKER_URLS : (cfg.WORKER_URL ? [cfg.WORKER_URL] : []);
+    var base = urls.length ? String(urls[0]).replace(/\/+$/, "") : "";
+    var timer = null;
+    var busy = false;
+    var toastTimer = null;
+
+    function collect() {
+      var d = {};
+      Object.keys(LS).forEach(function (k) { d[k] = get(LS[k], null); });
+      try { d.aiChat = JSON.parse(localStorage.getItem("mint_ai_chat")) || []; } catch (e) { d.aiChat = []; }
+      d.savedAt = Date.now();
+      return d;
+    }
+    function hasLocal() {
+      var n = 0;
+      Object.keys(LS).forEach(function (k) {
+        var v = localStorage.getItem(LS[k]);
+        if (v && v !== "null" && v !== "[]" && v !== "{}") n++;
+      });
+      return n > 0;
+    }
+    function toast(msg, ok) {
+      var el = document.getElementById("sync-toast");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "sync-toast";
+        el.style.cssText = "position:fixed;right:16px;bottom:72px;z-index:9999;padding:8px 14px;border-radius:20px;font-size:13px;color:#fff;background:rgba(0,0,0,.72);opacity:0;transition:opacity .3s;pointer-events:none;max-width:80vw";
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.background = (ok === false) ? "rgba(214,69,69,.92)" : "rgba(0,0,0,.74)";
+      el.style.opacity = "1";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { el.style.opacity = "0"; }, 2600);
+    }
+    function upload() {
+      if (!base || busy) return;
+      busy = true;
+      fetch(base + "/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: collect() }),
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (d) {
+          busy = false;
+          if (d && d.ok) { toast("☁️ 已同步到云端"); }
+          else { toast("☁️ 同步失败，稍后自动重试", false); clearTimeout(timer); timer = setTimeout(upload, 30000); }
+        })
+        .catch(function () {
+          busy = false;
+          toast("☁️ 同步失败，稍后自动重试", false);
+          clearTimeout(timer); timer = setTimeout(upload, 30000);
+        });
+    }
+    function schedule() {
+      if (!base) return;
+      clearTimeout(timer);
+      timer = setTimeout(upload, 4000); // 保存后 4 秒合并上传一次
+    }
+    function pull() {
+      if (!base) return;
+      fetch(base + "/data")
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (d) {
+          if (d && d.data && typeof d.data === "object" && !hasLocal()) {
+            var remote = d.data;
+            Object.keys(LS).forEach(function (k) {
+              if (remote[k] !== undefined && remote[k] !== null) set(LS[k], remote[k]);
+            });
+            if (remote.aiChat && remote.aiChat.length) {
+              try { localStorage.setItem("mint_ai_chat", JSON.stringify(remote.aiChat)); } catch (e) {}
+            }
+            toast("☁️ 已从云端恢复数据");
+            location.reload(); // 重新渲染页面
+          }
+        })
+        .catch(function () {});
+    }
+    return { schedule: schedule, pull: pull, upload: upload, collect: collect };
+  })();
+  window.__mintSync = SYNC;
 
   function getUser() {
     return get(LS.user, { name: "", height: 165, dailyCalorieGoal: 1300, targetWeight: "", startWeight: "" });
@@ -1148,5 +1237,6 @@
     updateChickOnLoad();
     updateSidebarUser();
     renderDashboard();
+    if (window.__mintSync) window.__mintSync.pull();
   });
 })();
