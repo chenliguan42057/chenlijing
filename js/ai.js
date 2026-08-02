@@ -7,10 +7,12 @@
 (function () {
   "use strict";
 
-  var cfg = window.APP_CONFIG || {};
-  var ZHIPU_KEY = cfg.ZHIPU_API_KEY || "";
   var CHAT_KEY = "mint_ai_chat";
-  var CHAT_VER = "20260803_dual";
+  var CHAT_VER = "20260803_dual_v2";
+
+  /* 模块 2 的 Key 与模型由用户在「个人资料 → AI 助手」填写（存 localStorage，自动隐藏） */
+  function getZhipuKey() { try { return localStorage.getItem("mint_zhipu_key") || ""; } catch (e) { return ""; } }
+  function getZhipuModel() { try { return localStorage.getItem("mint_zhipu_model") || "glm-4-flash"; } catch (e) { return "glm-4-flash"; } }
 
   var chatLog = document.getElementById("chat-log");
   var input = document.getElementById("ai-input");
@@ -147,20 +149,20 @@
 
   /* ================= 模块 2 · 可选对话式 AI（智谱直连） ================= */
   function aiEnabled() {
-    try { return localStorage.getItem("mint_ai_enabled") === "1"; } catch (e) { return false; }
+    try { return localStorage.getItem("mint_ai_enabled") === "1" && getZhipuKey().length > 0; } catch (e) { return false; }
   }
   function chatZhipu(messages) {
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 30000) : null;
     var payload = JSON.stringify({
-      model: "glm-4-flash",
+      model: getZhipuModel(),
       messages: [{ role: "system", content: "你是「薄荷」，一位专业、温柔的减脂助手，主要服务女生。回答简洁、鼓励、不制造焦虑，每次 200 字以内，可用少量 emoji。" }, messages[messages.length - 1]],
       max_tokens: 600,
       temperature: 0.6,
     });
     var opts = {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ZHIPU_KEY },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getZhipuKey() },
       body: payload,
     };
     if (ctrl) opts.signal = ctrl.signal;
@@ -192,13 +194,13 @@
     var isLocalHit = true; // 兜底规则命中时仍走本地，但提示可开 AI
     var isFallback = local.indexOf("本地知识库还答不上来") !== -1 || local.indexOf("还在学习") !== -1;
 
-    if (!isFallback && !(aiEnabled() && ZHIPU_KEY)) {
+    if (!isFallback && !aiEnabled()) {
       // 本地明确回答，且未启用智谱 → 直接本地回复
       pushReply("🌿 " + local);
       return;
     }
 
-    if (aiEnabled() && ZHIPU_KEY) {
+    if (aiEnabled()) {
       // 启用智谱 → 有本地命中时优先本地，未命中走智谱；都可用时本地优先更快
       if (!isFallback) {
         pushReply("🌿 " + local + "\n\n（以上为本地智能问答；如需深度对话可追问）");
