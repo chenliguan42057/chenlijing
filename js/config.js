@@ -1,18 +1,15 @@
 // ============================================================
-//  薄荷减脂 · 前端配置（双模块 AI + 数据直连 GitHub 同步）
-//  ⚠️ 安全提示：本文件是公开可见的。ZHIPU_API_KEY 与 GITHUB_TOKEN
-//     都会暴露给任何访问者，请使用「低权限/受限」令牌并定期更换。
+//  薄荷减脂 · 前端配置（AI 双模块 + 数据直连 GitHub 同步）
+//  安全设计：
+//   - 智谱 API Key：不在本文件里，由你在「个人资料 → AI 助手」
+//     填写，仅存本机浏览器 localStorage，填完自动隐藏。
+//   - GITHUB_TOKEN：数据同步用「受限令牌」（Fine-grained token，
+//     仅授权 mint-data 仓库 Contents 读写）。请勿放全权限令牌。
+//     留空 = 同步功能禁用。
 // ============================================================
 window.APP_CONFIG = {
-  /* ---- 模块 2：可选对话式 AI（智谱 GLM-4-Flash，永久免费）---- */
-  ZHIPU_API_KEY: "322571bb3e62469985cffbd34c384fcf.1Ka3xiL89KLcdWE5",
-
-  /* ---- 数据云同步：前端直连 GitHub（不经过任何服务器中转）----
-     GITHUB_TOKEN 请使用「受限令牌」：只授权 mint-data 仓库的
-     Contents 读写权限（Settings → Developer settings →
-     Fine-grained tokens → 仓库选 mint-data → Contents: Read and write）
-     绝不要用全权限 PAT。留空则同步功能自动禁用。 */
-  GITHUB_TOKEN: "",
+  /* ---- 数据云同步：前端直连 GitHub（不经过任何服务器中转）---- */
+  GITHUB_TOKEN: "",                          // ← 受限令牌，待你创建后填入
   GITHUB_REPO: "chenliguan42057/mint-data",
   GITHUB_PATH: "data.json",
   GITHUB_BRANCH: "main"
