@@ -1,13 +1,27 @@
 /* ===========================================================
-   AI 减脂助手 · 聊天逻辑（调用自建 Cloudflare Worker 代理）
-   已接入新布局的 AI 助手页面。
+   AI 减脂助手 · 聊天逻辑（调用 AI 代理，含超时/重试/多地址容错）
+   代理地址在 js/config.js 的 WORKER_URLS 数组中配置（主地址优先，
+   主地址失败自动切换下一个），前端零密钥。
    =========================================================== */
 (function () {
   "use strict";
 
-  var WORKER_URL = (window.APP_CONFIG && window.APP_CONFIG.WORKER_URL) || "";
   var CHAT_KEY = "mint_ai_chat";
-  var CHAT_VER = "20260802_v3"; // 聊天记录缓存版本：站点升级时+1，旧记录（含失败气泡）自动清空
+  var CHAT_VER = "20260802_v4"; // 聊天记录缓存版本：站点升级时+1，旧记录自动清空
+
+  /* ---------- 读取代理地址列表（兼容 WORKER_URLS 数组 与 旧 WORKER_URL 单值） ---------- */
+  var WORKER_URLS = [];
+  (function () {
+    var cfg = window.APP_CONFIG || {};
+    if (Array.isArray(cfg.WORKER_URLS) && cfg.WORKER_URLS.length) {
+      WORKER_URLS = cfg.WORKER_URLS.slice();
+    } else if (cfg.WORKER_URL) {
+      WORKER_URLS = [cfg.WORKER_URL];
+    }
+    WORKER_URLS = WORKER_URLS
+      .map(function (u) { return String(u || "").trim().replace(/\/+$/, ""); })
+      .filter(function (u) { return u && u.indexOf("yourname") === -1; });
+  })();
 
   var chatLog = document.getElementById("chat-log");
   var input = document.getElementById("ai-input");
@@ -20,7 +34,6 @@
     try {
       var ver = localStorage.getItem(CHAT_KEY + "_ver");
       if (ver !== CHAT_VER) {
-        // 旧版本聊天记录（可能含历史失败气泡），一次性自动清空，无需用户手动操作
         localStorage.removeItem(CHAT_KEY);
         localStorage.setItem(CHAT_KEY + "_ver", CHAT_VER);
         return [];
@@ -74,11 +87,23 @@
     scrollBottom();
   }
 
+  /* ---------- 带超时的 fetch（默认 25 秒，避免无限转圈） ---------- */
+  function fetchWithTimeout(url, opts, ms) {
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 25000) : null;
+    var p = fetch(url, ctrl ? Object.assign({}, opts, { signal: ctrl.signal }) : opts);
+    return p.then(
+      function (r) { if (timer) clearTimeout(timer); return r; },
+      function (e) { if (timer) clearTimeout(timer); throw e; }
+    );
+  }
+
+  /* ---------- 发送消息：多地址逐个尝试 + 每地址自动重试 ---------- */
   function send(text) {
     text = (text || "").trim();
     if (!text) return;
-    if (!WORKER_URL || WORKER_URL.indexOf("yourname") !== -1) {
-      alert("请先在 js/config.js 里把 WORKER_URL 改成你的 Worker 地址哦～");
+    if (!WORKER_URLS.length) {
+      alert("AI 代理地址未配置，请检查 js/config.js 的 WORKER_URLS 哦～");
       return;
     }
     var empty = chatLog.querySelector(".chat-empty");
@@ -93,30 +118,61 @@
     var loading = addLoading();
     scrollBottom();
 
-    fetch(WORKER_URL.replace(/\/+$/, "") + "/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history.filter(function (m) { return m.role !== "system"; }) })
-    })
-      .then(function (resp) {
-        loading.remove();
-        return resp.json().then(function (data) { return { ok: resp.ok, data: data }; });
-      })
-      .then(function (r) {
-        if (!r.ok || r.data.error) {
-          handleError(r.data && r.data.error ? r.data.error : "http");
-          return;
-        }
-        var reply = r.data.reply || "（小助手没有回复）";
-        history.push({ role: "assistant", content: reply });
-        addBubble({ role: "assistant", content: reply });
-        saveChat();
-        scrollBottom();
-      })
-      .catch(function () {
-        loading.remove();
+    var payload = JSON.stringify({ messages: history.filter(function (m) { return m.role !== "system"; }) });
+    var MAX_RETRY = 2;      // 每个地址最多重试次数
+    var urlIndex = 0;       // 当前地址下标
+    var tried = 0;          // 当前地址已尝试次数
+    var done = false;
+
+    function finish() {
+      if (!done) { done = true; loading.remove(); }
+    }
+
+    function attempt() {
+      if (done) return;
+      if (urlIndex >= WORKER_URLS.length) {
+        // 所有地址都失败
+        finish();
         handleError("network");
-      });
+        return;
+      }
+      var url = WORKER_URLS[urlIndex] + "/chat";
+      fetchWithTimeout(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload
+      }, 25000)
+        .then(function (resp) {
+          return resp.json().then(function (data) { return { ok: resp.ok, data: data }; });
+        })
+        .then(function (r) {
+          if (!r.ok || r.data.error) {
+            // 服务器明确返回错误（配额/模型/配置），不重试，直接提示
+            finish();
+            handleError(r.data && r.data.error ? r.data.error : "http");
+            return;
+          }
+          var reply = r.data.reply || "（小助手没有回复）";
+          history.push({ role: "assistant", content: reply });
+          addBubble({ role: "assistant", content: reply });
+          saveChat();
+          scrollBottom();
+          finish();
+        })
+        .catch(function () {
+          // 网络失败 / 超时：先重试当前地址，再切换下一个地址
+          if (done) return;
+          tried++;
+          if (tried < MAX_RETRY) {
+            setTimeout(attempt, 800);
+          } else {
+            tried = 0;
+            urlIndex++;
+            setTimeout(attempt, 300);
+          }
+        });
+    }
+    attempt();
   }
 
   function autoGrow() {
