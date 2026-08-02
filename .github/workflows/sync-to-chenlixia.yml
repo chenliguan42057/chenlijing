@@ -34,6 +34,6 @@ jobs:
           fi
           git remote add chenlixia https://github.com/chenliguan42057/chenlixia.git
           git fetch chenlixia main
-          # 令牌经 HTTP Authorization 头传递，并禁用 credential helper（否则 bot 凭据会覆盖）
+          # 覆盖 actions/checkout 注入的 bot 凭据：用 URL 精确匹配的 extraheader 传 PAT，并禁用 credential helper
           AUTH="$(printf 'x-access-token:%s' "${SYNC_TOKEN}" | base64 -w0)"
-          git -c credential.helper= -c http.extraheader="AUTHORIZATION: basic ${AUTH}" push --force-with-lease chenlixia main
+          git -c credential.helper= -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${AUTH}" push --force-with-lease chenlixia main
