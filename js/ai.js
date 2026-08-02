@@ -7,6 +7,7 @@
 
   var WORKER_URL = (window.APP_CONFIG && window.APP_CONFIG.WORKER_URL) || "";
   var CHAT_KEY = "mint_ai_chat";
+  var CHAT_VER = "20260802_v3"; // 聊天记录缓存版本：站点升级时+1，旧记录（含失败气泡）自动清空
 
   var chatLog = document.getElementById("chat-log");
   var input = document.getElementById("ai-input");
@@ -16,8 +17,16 @@
   var history = loadChat();
 
   function loadChat() {
-    try { return JSON.parse(localStorage.getItem(CHAT_KEY)) || []; }
-    catch (e) { return []; }
+    try {
+      var ver = localStorage.getItem(CHAT_KEY + "_ver");
+      if (ver !== CHAT_VER) {
+        // 旧版本聊天记录（可能含历史失败气泡），一次性自动清空，无需用户手动操作
+        localStorage.removeItem(CHAT_KEY);
+        localStorage.setItem(CHAT_KEY + "_ver", CHAT_VER);
+        return [];
+      }
+      return JSON.parse(localStorage.getItem(CHAT_KEY)) || [];
+    } catch (e) { return []; }
   }
   function saveChat() { localStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-50))); }
 
