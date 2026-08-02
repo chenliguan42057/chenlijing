@@ -127,11 +127,14 @@
     if (window.__mintSync) window.__mintSync.schedule();
   }
 
-  /* ---------- 云同步（数据存 GitHub 私有仓库，经云函数中转，前端零密钥） ---------- */
+  /* ---------- 云同步（前端直连 GitHub 私有仓库，不经过任何服务器中转） ---------- */
   var SYNC = (function () {
     var cfg = window.APP_CONFIG || {};
-    var urls = (cfg.WORKER_URLS && cfg.WORKER_URLS.length) ? cfg.WORKER_URLS : (cfg.WORKER_URL ? [cfg.WORKER_URL] : []);
-    var base = urls.length ? String(urls[0]).replace(/\/+$/, "") : "";
+    var token = cfg.GITHUB_TOKEN || "";
+    var repo = cfg.GITHUB_REPO || "chenliguan42057/mint-data";
+    var path = cfg.GITHUB_PATH || "data.json";
+    var branch = cfg.GITHUB_BRANCH || "main";
+    var apiUrl = "https://api.github.com/repos/" + repo + "/contents/" + path;
     var timer = null;
     var busy = false;
     var toastTimer = null;
@@ -165,18 +168,31 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(function () { el.style.opacity = "0"; }, 2600);
     }
+    function ghHeaders() {
+      return { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    }
     function upload() {
-      if (!base || busy) return;
+      if (!token || busy) return;
       busy = true;
-      fetch(base + "/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: collect() }),
-      })
+      var data = collect();
+      // 先取当前文件 sha（文件不存在则新建）
+      fetch(apiUrl + "?ref=" + branch, { headers: ghHeaders() })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
-        .then(function (d) {
+        .then(function (meta) {
+          var sha = (meta && meta.sha) ? meta.sha : undefined;
+          return fetch(apiUrl, {
+            method: "PUT",
+            headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders()),
+            body: JSON.stringify({
+              message: "mint-data 云同步",
+              content: btoa(unescape(encodeURIComponent(JSON.stringify(data)))),
+              sha: sha,
+            }),
+          });
+        })
+        .then(function (r) {
           busy = false;
-          if (d && d.ok) { toast("☁️ 已同步到云端"); }
+          if (r.status === 200 || r.status === 201) { toast("☁️ 已同步到云端"); }
           else { toast("☁️ 同步失败，稍后自动重试", false); clearTimeout(timer); timer = setTimeout(upload, 30000); }
         })
         .catch(function () {
@@ -186,25 +202,28 @@
         });
     }
     function schedule() {
-      if (!base) return;
+      if (!token) return;
       clearTimeout(timer);
       timer = setTimeout(upload, 4000); // 保存后 4 秒合并上传一次
     }
     function pull() {
-      if (!base) return;
-      fetch(base + "/data")
+      if (!token) return;
+      fetch(apiUrl + "?ref=" + branch, { headers: ghHeaders() })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
-        .then(function (d) {
-          if (d && d.data && typeof d.data === "object" && !hasLocal()) {
-            var remote = d.data;
-            Object.keys(LS).forEach(function (k) {
-              if (remote[k] !== undefined && remote[k] !== null) set(LS[k], remote[k]);
-            });
-            if (remote.aiChat && remote.aiChat.length) {
-              try { localStorage.setItem("mint_ai_chat", JSON.stringify(remote.aiChat)); } catch (e) {}
+        .then(function (meta) {
+          if (meta && meta.content) {
+            var remote;
+            try { remote = JSON.parse(decodeURIComponent(escape(atob(meta.content)))); } catch (e) { remote = null; }
+            if (remote && typeof remote === "object" && !hasLocal()) {
+              Object.keys(LS).forEach(function (k) {
+                if (remote[k] !== undefined && remote[k] !== null) set(LS[k], remote[k]);
+              });
+              if (remote.aiChat && remote.aiChat.length) {
+                try { localStorage.setItem("mint_ai_chat", JSON.stringify(remote.aiChat)); } catch (e) {}
+              }
+              toast("☁️ 已从云端恢复数据");
+              location.reload(); // 重新渲染页面
             }
-            toast("☁️ 已从云端恢复数据");
-            location.reload(); // 重新渲染页面
           }
         })
         .catch(function () {});
@@ -826,6 +845,24 @@
         alert("已清空"); location.reload();
       }
     });
+    // AI 对话开关（模块 2 可选智谱）
+    var aiSwitch = $("set-ai-enabled");
+    var aiTip = $("ai-state-tip");
+    function updateAiTip() {
+      if (!aiTip) return;
+      var on = localStorage.getItem("mint_ai_enabled") === "1";
+      aiTip.textContent = on
+        ? "当前：本地问答 + 对话式 AI（已开启）"
+        : "当前：本地智能问答（对话式 AI 未开启）";
+    }
+    if (aiSwitch) {
+      aiSwitch.checked = localStorage.getItem("mint_ai_enabled") === "1";
+      aiSwitch.addEventListener("change", function () {
+        localStorage.setItem("mint_ai_enabled", aiSwitch.checked ? "1" : "0");
+        updateAiTip();
+      });
+      updateAiTip();
+    }
   }
   function updateSidebarUser() {
     var user = getUser();
