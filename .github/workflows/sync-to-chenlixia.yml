@@ -28,5 +28,10 @@ jobs:
         env:
           SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
+          if [ -z "${SYNC_TOKEN}" ]; then
+            echo "::error::SYNC_TOKEN secret 为空，请检查仓库 Actions secrets 配置"
+            exit 1
+          fi
+          echo "SYNC_TOKEN 已注入，长度: ${#SYNC_TOKEN}"
           git remote add chenlixia https://x-access-token:${SYNC_TOKEN}@github.com/chenliguan42057/chenlixia.git
           git push --force-with-lease chenlixia main
