@@ -538,10 +538,29 @@
 
             <div class="card">
               <div class="card-head"><h2>AI 助手</h2></div>
-              <p class="tip">本地智能问答<b>开箱即用</b>（免费、离线、无需配置），可直接问热量/饮食/运动/减脂常识。</p>
+              <p class="tip">本地智能问答<b>开箱即用</b>（免费、离线、无需配置）。对话式 AI 需填写智谱 API Key 后启用。</p>
               <label class="field" style="display:flex;align-items:center;justify-content:space-between">
-                <span class="field-label" style="margin:0">对话式 AI（智谱大模型）</span>
+                <span class="field-label" style="margin:0">对话式 AI（智谱）</span>
                 <input type="checkbox" id="set-ai-enabled" />
+              </label>
+              <div id="zhipu-key-box" style="display:none">
+                <label class="field">
+                  <span class="field-label">智谱 API Key</span>
+                  <input id="set-zhipu-key" type="password" placeholder="粘贴智谱 API Key" autocomplete="off" />
+                </label>
+                <button class="btn-candy" id="set-zhipu-key-save">保存并验证</button>
+                <p class="tip">Key 仅存本机浏览器，不会上传。glm-4-flash 永久免费；air / plus 为付费模型。</p>
+              </div>
+              <div id="zhipu-key-done" style="display:none">
+                <p class="tip" style="margin:6px 0">✅ 智谱 Key 已配置（已隐藏）&nbsp;<button class="btn-outline" id="set-zhipu-key-edit" style="padding:2px 10px;font-size:12px">修改</button></p>
+              </div>
+              <label class="field" id="model-row" style="display:none">
+                <span class="field-label">智谱模型</span>
+                <select id="set-zhipu-model">
+                  <option value="glm-4-flash">glm-4-flash（免费）</option>
+                  <option value="glm-4-air">glm-4-air</option>
+                  <option value="glm-4-plus">glm-4-plus</option>
+                </select>
               </label>
               <p class="tip" id="ai-state-tip">当前：本地智能问答</p>
             </div>
