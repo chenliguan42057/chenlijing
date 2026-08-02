@@ -5,5 +5,5 @@
 //  把它填到下面引号里即可（注意：这是公开地址，不是密钥，放前端没问题）。
 // ============================================================
 window.APP_CONFIG = {
-  WORKER_URL: "https://fatloss-ai.yourname.workers.dev",
+  WORKER_URL: "https://chenliguan.3341644038.workers.dev",
 };
