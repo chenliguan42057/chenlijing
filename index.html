@@ -535,12 +535,22 @@
               </div>
               <button class="btn-danger" id="btn-clear">清空所有本地数据</button>
             </div>
+
+            <div class="card">
+              <div class="card-head"><h2>AI 助手</h2></div>
+              <p class="tip">本地智能问答<b>开箱即用</b>（免费、离线、无需配置），可直接问热量/饮食/运动/减脂常识。</p>
+              <label class="field" style="display:flex;align-items:center;justify-content:space-between">
+                <span class="field-label" style="margin:0">对话式 AI（智谱大模型）</span>
+                <input type="checkbox" id="set-ai-enabled" />
+              </label>
+              <p class="tip" id="ai-state-tip">当前：本地智能问答</p>
+            </div>
           </div>
 
           <div class="card about-card">
             <h2>关于</h2>
             <p>薄荷减脂打卡 · 本地隐私版</p>
-            <p class="tip">数据仅保存在你的设备中；AI 通过自建 Cloudflare Worker 代理访问，不会泄露密钥。</p>
+            <p class="tip">打卡数据仅保存在你的设备，并自动同步到你的 GitHub 私有仓库（跨设备可恢复）；AI 本地问答免费离线可用，对话式 AI 为可选功能。</p>
           </div>
         </section>
       </div>
