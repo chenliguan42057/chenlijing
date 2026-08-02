@@ -32,6 +32,8 @@ jobs:
             echo "::error::SYNC_TOKEN secret 为空，请检查仓库 Actions secrets 配置"
             exit 1
           fi
-          echo "SYNC_TOKEN 已注入，长度: ${#SYNC_TOKEN}"
-          git remote add chenlixia https://x-access-token:${SYNC_TOKEN}@github.com/chenliguan42057/chenlixia.git
-          git push --force-with-lease chenlixia main
+          git remote add chenlixia https://github.com/chenliguan42057/chenlixia.git
+          git fetch chenlixia main
+          # 令牌经 HTTP Authorization 头传递（URL 内嵌令牌会被 git 安全拦截）
+          AUTH="$(printf 'x-access-token:%s' "${SYNC_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${AUTH}" push --force-with-lease chenlixia main
