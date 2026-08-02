@@ -1,9 +1,7 @@
 // ============================================================
-//  唯一需要你修改的地方：把 WORKER_URL 改成你的 Cloudflare Worker 地址
-//  部署 Worker 后，Cloudflare 会给你一个类似下面的地址：
-//      https://fatloss-ai.你的用户名.workers.dev
-//  把它填到下面引号里即可（注意：这是公开地址，不是密钥，放前端没问题）。
+//  AI 代理地址：指向腾讯云 CloudBase 云函数（智谱 GLM-4-Flash 免费模型）
+//  密钥（ZHIPU_API_KEY）仅存于云函数环境变量，前端零密钥。
 // ============================================================
 window.APP_CONFIG = {
-  WORKER_URL: "https://chenliguan.3341644038.workers.dev",
+  WORKER_URL: "https://zhipu-proxy-d3g2qq9vucdf9addd-1451267346.ap-shanghai.app.tcloudbase.com",
 };
