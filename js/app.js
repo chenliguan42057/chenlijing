@@ -11,6 +11,22 @@
   var $ = function (id) { return document.getElementById(id); };
   var qsa = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
 
+  /* ---------- 数据版本标记：版本变化时自动清空全部本地数据（恢复初始状态） ---------- */
+  var DATA_VER = "20260802_init";
+  (function resetDataIfNeeded() {
+    try {
+      if (localStorage.getItem("mint_data_ver") !== DATA_VER) {
+        var keys = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf("mint_") === 0) keys.push(k);
+        }
+        keys.forEach(function (k) { localStorage.removeItem(k); });
+        localStorage.setItem("mint_data_ver", DATA_VER);
+      }
+    } catch (e) { /* 忽略隐私模式等异常 */ }
+  })();
+
   var LS = {
     user: "mint_user",
     checkins: "mint_checkins",
