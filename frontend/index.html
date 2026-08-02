@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>薄荷减脂打卡 · 卡通版</title>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body data-theme="dashboard">
+  <div class="app">
+    <!-- 移动端侧边栏遮罩 -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- 左侧目录 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">🐤</div>
+        <div>
+          <div class="brand-title">薄荷减脂</div>
+          <div class="brand-sub">温柔坚持，慢慢变好</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-page="dashboard"><span class="nav-ico">🏠</span><span>仪表盘</span></button>
+        <button class="nav-item" data-page="checkin"><span class="nav-ico">✅</span><span>今日打卡</span></button>
+        <button class="nav-item" data-page="diet"><span class="nav-ico">🍱</span><span>饮食记录</span></button>
+        <button class="nav-item" data-page="exercise"><span class="nav-ico">🏃</span><span>运动记录</span></button>
+        <button class="nav-item" data-page="body"><span class="nav-ico">📏</span><span>身体数据</span></button>
+        <button class="nav-item" data-page="recommend"><span class="nav-ico">💡</span><span>今日推荐</span></button>
+        <button class="nav-item" data-page="ai"><span class="nav-ico">🤖</span><span>AI 助手</span></button>
+        <button class="nav-item" data-page="settings"><span class="nav-ico">👤</span><span>个人资料</span></button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="user-pill">
+          <div class="avatar" id="side-avatar">我</div>
+          <div class="user-info">
+            <div class="user-name" id="side-name">我的减脂日记</div>
+            <div class="user-badge">本地存储</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main">
+      <!-- 顶部栏 -->
+      <header class="topbar">
+        <button class="menu-btn" id="menu-btn" aria-label="菜单">☰</button>
+        <h1 class="page-title" id="page-title">仪表盘</h1>
+        <div class="topbar-meta">
+          <span class="date-badge" id="top-date">--</span>
+          <button class="icon-btn" id="top-settings" title="个人资料">👤</button>
+        </div>
+      </header>
+
+      <!-- 页面容器 -->
+      <div class="content" id="content">
+
+        <!-- ========== 仪表盘 ========== -->
+        <section class="page active" id="page-dashboard">
+
+          <!-- 小鸡仔英雄卡 -->
+          <div class="card chick-hero" id="chick-hero">
+            <div class="chick-hero-main">
+              <div class="chick-svg" id="chick-svg"></div>
+              <div class="chick-info">
+                <div class="chick-level" id="chick-level">蛋蛋</div>
+                <div class="chick-status" id="chick-status">还没有开始打卡哦～</div>
+                <div class="growth-bar">
+                  <div class="growth-fill" id="chick-growth-bar"></div>
+                </div>
+                <div class="growth-text" id="chick-growth-text">成长值 0 / 升级还需 40</div>
+              </div>
+            </div>
+            <div class="chick-hero-side">
+              <span class="chick-badge" id="chick-badge">未打卡</span>
+              <button class="btn-candy btn-sm" id="btn-share">📸 生成分享卡</button>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-card candy-yellow">
+              <div class="metric-label">当前体重</div>
+              <div class="metric-value"><span id="dash-weight">--</span><small>kg</small></div>
+              <div class="metric-delta" id="dash-weight-delta">体重是减脂的第一信号</div>
+            </div>
+            <div class="metric-card candy-pink">
+              <div class="metric-label">今日摄入</div>
+              <div class="metric-value"><span id="dash-cal-in">0</span><small>kcal</small></div>
+              <div class="metric-delta" id="dash-cal-goal">目标 -- kcal</div>
+            </div>
+            <div class="metric-card candy-blue">
+              <div class="metric-label">运动消耗</div>
+              <div class="metric-value"><span id="dash-cal-out">0</span><small>kcal</small></div>
+              <div class="metric-delta">今天的努力都算数</div>
+            </div>
+            <div class="metric-card candy-purple">
+              <div class="metric-label">连续打卡</div>
+              <div class="metric-value"><span id="dash-streak">0</span><small>天</small></div>
+              <div class="metric-delta" id="dash-streak-txt">继续加油</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card chart-card">
+              <div class="card-head">
+                <h2>体重趋势</h2>
+                <div class="seg-group" id="weight-range">
+                  <button class="seg active" data-days="7">7天</button>
+                  <button class="seg" data-days="14">14天</button>
+                  <button class="seg" data-days="30">30天</button>
+                </div>
+              </div>
+              <div id="weight-chart" class="chart-wrap"></div>
+            </div>
+
+            <div class="card goal-card">
+              <h2>目标进度</h2>
+              <div class="goal-ring-wrap">
+                <div id="goal-ring"></div>
+                <div class="goal-text">
+                  <div class="goal-percent" id="goal-percent">0%</div>
+                  <div class="goal-label">已达成</div>
+                </div>
+              </div>
+              <div class="goal-detail">
+                <div><span>当前</span><b id="goal-current">--</b></div>
+                <div><span>目标</span><b id="goal-target">--</b></div>
+                <div><span>起始</span><b id="goal-start">--</b></div>
+              </div>
+              <button class="btn-candy btn-sm" data-jump="body">更新身体数据</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>今日动态</h2>
+              <button class="btn-text" data-jump="checkin">去打卡</button>
+            </div>
+            <ul class="timeline" id="timeline"></ul>
+            <div class="empty-state" id="timeline-empty" style="display:none">
+              <div class="empty-ico">🌿</div>
+              <p>今天还没有记录，从饮食或运动开始吧～</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 今日打卡 ========== -->
+        <section class="page" id="page-checkin">
+          <div class="chick-strip" id="chick-strip"></div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h2>基础记录</h2><span class="date-badge" id="checkin-date">--</span></div>
+              <label class="field">
+                <span class="field-label">今日体重（kg）</span>
+                <input id="ci-weight" type="number" inputmode="decimal" step="0.1" placeholder="例如 55.2" />
+              </label>
+              <label class="field">
+                <span class="field-label">睡眠时长（小时）</span>
+                <input id="ci-sleep" type="number" inputmode="decimal" step="0.5" min="0" max="24" placeholder="例如 7.5" />
+              </label>
+              <label class="field">
+                <span class="field-label">今日心情</span>
+                <div class="chip-row" id="ci-mood-row">
+                  <button class="chip" data-val="不错">😊 不错</button>
+                  <button class="chip" data-val="一般">😐 一般</button>
+                  <button class="chip" data-val="疲惫">😪 疲惫</button>
+                  <button class="chip" data-val="开心">🥰 开心</button>
+                </div>
+              </label>
+              <label class="field">
+                <span class="field-label">今日备注</span>
+                <textarea id="ci-note" rows="2" placeholder="今天有什么想对自己说的…"></textarea>
+              </label>
+              <label class="field">
+                <span class="field-label">📷 体型自拍（可选，仅存本机）</span>
+                <div class="photo-upload">
+                  <input type="file" id="ci-photo" accept="image/*" hidden />
+                  <button type="button" class="btn-outline btn-sm" id="ci-photo-btn">选择照片</button>
+                  <div class="photo-preview" id="ci-photo-preview"></div>
+                </div>
+              </label>
+              <button class="btn-candy" id="ci-save">保存今日打卡</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>饮水打卡</h2><span class="water-hint">建议每日 1500–2000 ml</span></div>
+              <div class="water-display">
+                <div class="water-num"><span id="water-count">0</span><small>杯</small></div>
+                <div class="water-sub">≈ <span id="water-ml">0</span> ml</div>
+              </div>
+              <div class="water-actions">
+                <button class="btn-outline" id="water-minus">− 减少</button>
+                <button class="btn-candy" id="water-plus">+ 喝一杯</button>
+              </div>
+              <div class="water-cups" id="water-cups"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 饮食记录 ========== -->
+        <section class="page" id="page-diet">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h2>添加饮食</h2><span class="date-badge" id="diet-add-date">今天</span></div>
+              <label class="field">
+                <span class="field-label">餐别</span>
+                <div class="chip-row" id="diet-meal-row">
+                  <button class="chip active" data-val="早餐">早餐</button>
+                  <button class="chip" data-val="午餐">午餐</button>
+                  <button class="chip" data-val="晚餐">晚餐</button>
+                  <button class="chip" data-val="加餐">加餐</button>
+                </div>
+              </label>
+              <label class="field">
+                <span class="field-label">食物名称（可含做法，如「炒青菜」「煎牛排」）</span>
+                <input id="diet-name" list="food-list" placeholder="输入食物名称" />
+                <datalist id="food-list"></datalist>
+              </label>
+              <div class="field">
+                <span class="field-label">分量（具象单位，点一下就填好）</span>
+                <div class="chip-row unit-row" id="diet-unit-row"></div>
+                <div class="field-row" style="margin-top:10px">
+                  <label class="field" style="margin-bottom:0">
+                    <span class="field-label">自定义克数（g）</span>
+                    <input id="diet-grams" type="number" inputmode="numeric" placeholder="或选上方单位" />
+                  </label>
+                  <label class="field" style="margin-bottom:0">
+                    <span class="field-label">热量（kcal）</span>
+                    <input id="diet-cal" type="number" inputmode="numeric" placeholder="自动估算" />
+                  </label>
+                </div>
+              </div>
+              <label class="field">
+                <span class="field-label">📷 餐食照片（可选，仅存本机）</span>
+                <div class="photo-upload">
+                  <input type="file" id="diet-photo" accept="image/*" hidden />
+                  <button type="button" class="btn-outline btn-sm" id="diet-photo-btn">拍一张 / 选图</button>
+                  <div class="photo-preview" id="diet-photo-preview"></div>
+                </div>
+              </label>
+              <div class="tip" id="diet-tip">选一个具象分量或填克数，热量会自动估算。</div>
+              <div class="quick-foods" id="quick-foods"></div>
+              <button class="btn-candy" id="diet-add">添加记录</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h2>当日摄入</h2>
+                <div class="cal-badge"><span id="diet-total">0</span> / <span id="diet-goal">--</span> kcal</div>
+              </div>
+              <div class="date-switch">
+                <button class="ds-btn" id="diet-prev" title="前一天">‹</button>
+                <input type="date" id="diet-date" class="ds-input" />
+                <button class="ds-btn" id="diet-next" title="后一天">›</button>
+                <button class="ds-btn ds-today" id="diet-today">今天</button>
+              </div>
+              <div class="chip-row filter-row" id="diet-filter-row">
+                <button class="chip active" data-filter="all">全部</button>
+                <button class="chip" data-filter="早餐">早餐</button>
+                <button class="chip" data-filter="午餐">午餐</button>
+                <button class="chip" data-filter="晚餐">晚餐</button>
+                <button class="chip" data-filter="加餐">加餐</button>
+              </div>
+              <div id="diet-chart" class="mini-chart"></div>
+              <ul class="list scrollable" id="diet-list"></ul>
+              <div class="empty-state" id="diet-empty" style="display:none">
+                <p>这一天还没有饮食记录～</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 运动记录 ========== -->
+        <section class="page" id="page-exercise">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h2>添加运动</h2><span class="date-badge" id="ex-add-date">今天</span></div>
+              <label class="field">
+                <span class="field-label">运动类型</span>
+                <select id="ex-type">
+                  <option value="" data-met="0">选择运动…</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">时长（分钟）</span>
+                <input id="ex-min" type="number" inputmode="numeric" placeholder="30" />
+              </label>
+              <label class="field">
+                <span class="field-label">消耗热量（kcal，选填）</span>
+                <input id="ex-cal" type="number" inputmode="numeric" placeholder="自动按体重估算" />
+              </label>
+              <label class="field">
+                <span class="field-label">📷 运动打卡照（可选，仅存本机）</span>
+                <div class="photo-upload">
+                  <input type="file" id="ex-photo" accept="image/*" hidden />
+                  <button type="button" class="btn-outline btn-sm" id="ex-photo-btn">拍一张 / 选图</button>
+                  <div class="photo-preview" id="ex-photo-preview"></div>
+                </div>
+              </label>
+              <div class="tip" id="ex-tip">选择运动类型并输入时长，会根据你的体重自动估算消耗。</div>
+              <button class="btn-candy" id="ex-add">添加记录</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h2>当日消耗</h2>
+                <div class="cal-badge"><span id="ex-total">0</span> kcal</div>
+              </div>
+              <div class="date-switch">
+                <button class="ds-btn" id="ex-prev" title="前一天">‹</button>
+                <input type="date" id="ex-date" class="ds-input" />
+                <button class="ds-btn" id="ex-next" title="后一天">›</button>
+                <button class="ds-btn ds-today" id="ex-today">今天</button>
+              </div>
+              <div class="chip-row filter-row" id="ex-filter-row">
+                <button class="chip active" data-filter="all">全部</button>
+                <button class="chip" data-filter="有氧">有氧</button>
+                <button class="chip" data-filter="力量">力量</button>
+                <button class="chip" data-filter="柔韧">柔韧</button>
+                <button class="chip" data-filter="HIIT">HIIT</button>
+              </div>
+              <ul class="list scrollable" id="ex-list"></ul>
+              <div class="empty-state" id="ex-empty" style="display:none">
+                <p>这一天还没有运动记录，动起来吧～</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 身体数据 ========== -->
+        <section class="page" id="page-body">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h2>身体指标</h2></div>
+              <div class="bmi-card">
+                <div class="bmi-value" id="bmi-value">--</div>
+                <div class="bmi-label" id="bmi-label">BMI</div>
+                <div class="bmi-bar-wrap">
+                  <div class="bmi-bar" id="bmi-bar"></div>
+                </div>
+                <div class="bmi-hint" id="bmi-hint">在「个人资料」中填写身高后自动计算</div>
+              </div>
+              <div class="field-row">
+                <label class="field">
+                  <span class="field-label">腰围（cm）</span>
+                  <input id="body-waist" type="number" inputmode="decimal" step="0.1" placeholder="--" />
+                </label>
+                <label class="field">
+                  <span class="field-label">臀围（cm）</span>
+                  <input id="body-hip" type="number" inputmode="decimal" step="0.1" placeholder="--" />
+                </label>
+              </div>
+              <button class="btn-candy" id="body-save">保存今日身体数据</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>目标设定</h2></div>
+              <label class="field">
+                <span class="field-label">目标体重（kg）</span>
+                <input id="goal-input" type="number" inputmode="decimal" step="0.1" placeholder="例如 50.0" />
+              </label>
+              <label class="field">
+                <span class="field-label">起始体重（kg，默认首次记录）</span>
+                <input id="start-input" type="number" inputmode="decimal" step="0.1" placeholder="留空则取最早记录" />
+              </label>
+              <button class="btn-candy" id="goal-save">保存目标</button>
+              <div class="goal-summary" id="goal-summary">
+                <span>距离目标还差</span>
+                <strong id="goal-diff">-- kg</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>体重曲线</h2>
+              <div class="seg-group" id="body-range">
+                <button class="seg active" data-days="7">7天</button>
+                <button class="seg" data-days="14">14天</button>
+                <button class="seg" data-days="30">30天</button>
+              </div>
+            </div>
+            <div id="body-chart" class="chart-wrap"></div>
+          </div>
+        </section>
+
+        <!-- ========== 今日推荐 ========== -->
+        <section class="page" id="page-recommend">
+          <div class="card rec-intro">
+            <div class="rec-intro-ico">💡</div>
+            <div>
+              <h2>今日专属推荐</h2>
+              <p class="tip" style="margin:0">来来来，花 10 秒做个小调查 🐤 我马上按你的身体情况，定制一套专属饮食、运动和作息方案，超准的！</p>
+            </div>
+          </div>
+
+          <div class="card" id="survey-card">
+            <div class="card-head"><h2>🩺 身体情况调查</h2><span class="rec-tag" id="survey-status"></span></div>
+            <div id="survey-form" class="survey-form">
+              <div class="survey-q">
+                <div class="survey-q-title">1. 你的性别？</div>
+                <div class="chip-row"><button class="chip survey-chip" data-group="gender" data-val="男">男</button><button class="chip survey-chip" data-group="gender" data-val="女">女</button></div>
+              </div>
+              <div class="survey-q">
+                <div class="survey-q-title">2. 你的年龄段？</div>
+                <div class="chip-row">
+                  <button class="chip survey-chip" data-group="age" data-val="18-25">18–25</button>
+                  <button class="chip survey-chip" data-group="age" data-val="26-35">26–35</button>
+                  <button class="chip survey-chip" data-group="age" data-val="36-45">36–45</button>
+                  <button class="chip survey-chip" data-group="age" data-val="46+">46 岁以上</button>
+                </div>
+              </div>
+              <div class="survey-q">
+                <div class="survey-q-title">3. 日常活动量？</div>
+                <div class="chip-row">
+                  <button class="chip survey-chip" data-group="activity" data-val="久坐少动">久坐少动</button>
+                  <button class="chip survey-chip" data-group="activity" data-val="偶尔运动">偶尔运动</button>
+                  <button class="chip survey-chip" data-group="activity" data-val="经常运动">经常运动</button>
+                  <button class="chip survey-chip" data-group="activity" data-val="高强度训练">高强度训练</button>
+                </div>
+              </div>
+              <div class="survey-q">
+                <div class="survey-q-title">4. 饮食偏好？</div>
+                <div class="chip-row">
+                  <button class="chip survey-chip" data-group="dietpref" data-val="均衡">均衡</button>
+                  <button class="chip survey-chip" data-group="dietpref" data-val="偏肉食">偏肉食</button>
+                  <button class="chip survey-chip" data-group="dietpref" data-val="偏素食">偏素食</button>
+                  <button class="chip survey-chip" data-group="dietpref" data-val="控糖控油">控糖控油</button>
+                </div>
+              </div>
+              <div class="survey-q">
+                <div class="survey-q-title">5. 减脂目标？</div>
+                <div class="chip-row">
+                  <button class="chip survey-chip" data-group="goal" data-val="快速减脂">快速减脂</button>
+                  <button class="chip survey-chip" data-group="goal" data-val="稳健减脂">稳健减脂</button>
+                  <button class="chip survey-chip" data-group="goal" data-val="塑形增肌">塑形增肌</button>
+                </div>
+              </div>
+              <div class="survey-q">
+                <div class="survey-q-title">6. 身体情况（选最接近的一项）？</div>
+                <div class="chip-row">
+                  <button class="chip survey-chip" data-group="condition" data-val="无特殊">无特殊</button>
+                  <button class="chip survey-chip" data-group="condition" data-val="肠胃偏弱">肠胃偏弱</button>
+                  <button class="chip survey-chip" data-group="condition" data-val="易水肿">易水肿</button>
+                  <button class="chip survey-chip" data-group="condition" data-val="易低血糖">易低血糖</button>
+                  <button class="chip survey-chip" data-group="condition" data-val="有三高">有三高</button>
+                </div>
+              </div>
+              <button class="btn-candy" id="survey-submit">生成我的专属推荐</button>
+              <p class="tip" id="survey-warn" style="display:none;color:var(--danger);background:var(--danger-bg)">还有题目没选完，补上再生成吧～</p>
+            </div>
+            <div id="survey-done" style="display:none">
+              <p class="tip" style="margin-bottom:12px">搞定！专属方案已生成 👇 想换风格随时重新调查～</p>
+              <button class="btn-outline btn-sm" id="survey-reset">重新调查</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>🍽️ 饮食推荐</h2><span class="rec-tag" id="rec-diet-tag"></span></div>
+            <div id="rec-diet" class="rec-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>🏃 运动推荐</h2><span class="rec-tag" id="rec-ex-tag"></span></div>
+            <div id="rec-exercise" class="rec-list"></div>
+            <button class="btn-outline btn-sm" id="rec-video-btn">▶️ 看跟练视频</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>🌙 作息推荐</h2></div>
+            <div id="rec-schedule" class="rec-list"></div>
+          </div>
+        </section>
+
+        <!-- ========== AI 助手 ========== -->
+        <section class="page" id="page-ai">
+          <div class="card chat-card">
+            <div class="chat-header">
+              <div class="chat-avatar">AI</div>
+              <div>
+                <div class="chat-name">薄荷减脂助手</div>
+                <div class="chat-status">饮食 · 运动 · 减脂常识</div>
+              </div>
+            </div>
+            <div id="chat-log" class="chat-log"></div>
+          </div>
+          <div class="suggest-row" id="suggest-row">
+            <button class="ai-suggest" data-q="100g 米饭有多少热量？">米饭热量</button>
+            <button class="ai-suggest" data-q="帮我安排一个 30 分钟在家运动方案">运动方案</button>
+            <button class="ai-suggest" data-q="减脂期晚餐应该怎么吃？">晚餐建议</button>
+            <button class="ai-suggest" data-q="平台期了怎么办？">突破平台期</button>
+          </div>
+          <div class="chat-input-row">
+            <textarea id="ai-input" rows="1" placeholder="问问薄荷任何减脂问题…"></textarea>
+            <button id="ai-send" class="btn-send" aria-label="发送">➤</button>
+          </div>
+          <button id="ai-clear" class="btn-text">清空聊天记录</button>
+        </section>
+
+        <!-- ========== 个人资料 ========== -->
+        <section class="page" id="page-settings">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h2>个人资料</h2></div>
+              <label class="field">
+                <span class="field-label">昵称</span>
+                <input id="set-name" placeholder="怎么称呼你" />
+              </label>
+              <label class="field">
+                <span class="field-label">身高（cm）</span>
+                <input id="set-height" type="number" inputmode="decimal" step="0.1" placeholder="例如 165" />
+              </label>
+              <label class="field">
+                <span class="field-label">每日热量目标（kcal）</span>
+                <input id="set-cal-goal" type="number" inputmode="numeric" placeholder="例如 1300" />
+              </label>
+              <button class="btn-candy" id="set-save">保存资料</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>数据管理</h2></div>
+              <p class="tip">所有数据都存在本机浏览器。照片会以压缩图形式存储，注意容量（建议保留 20 张以内）。</p>
+              <div class="storage-meter">
+                <div class="storage-bar"><div class="storage-fill" id="storage-fill"></div></div>
+                <div class="storage-text" id="storage-text">已用 0 KB</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn-outline" id="btn-export">导出 JSON</button>
+                <label class="btn-outline file-label">
+                  导入 JSON
+                  <input type="file" id="btn-import" accept=".json" hidden />
+                </label>
+              </div>
+              <button class="btn-danger" id="btn-clear">清空所有本地数据</button>
+            </div>
+          </div>
+
+          <div class="card about-card">
+            <h2>关于</h2>
+            <p>薄荷减脂打卡 · 本地隐私版</p>
+            <p class="tip">数据仅保存在你的设备中；AI 通过自建 Cloudflare Worker 代理访问，不会泄露密钥。</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分享卡弹窗 -->
+  <div class="modal" id="share-modal" style="display:none">
+    <div class="modal-mask" id="share-mask"></div>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>状态分享卡</h3>
+        <button class="modal-close" id="share-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="share-canvas" width="640" height="900"></canvas>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-candy" id="share-save">💾 保存图片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 梗提示气泡 -->
+  <div class="meme-toast" id="meme-toast" style="display:none"></div>
+
+  <!-- SVG symbols -->
+  <svg width="0" height="0" style="position:absolute;">
+    <defs>
+      <path id="icon-leaf" d="M32 14c10 4 16 12 16 22 0 8-6 14-16 14s-16-6-16-14c0-10 6-18 16-22z" fill="#5DCAA5"/>
+    </defs>
+  </svg>
+
+  <script src="./js/config.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/ai.js"></script>
+</body>
+</html>
