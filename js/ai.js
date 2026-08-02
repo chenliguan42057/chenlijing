@@ -33,15 +33,19 @@
   function loadChat() {
     try {
       var ver = localStorage.getItem(CHAT_KEY + "_ver");
-      if (ver !== CHAT_VER) {
+      if (ver && ver !== CHAT_VER) {
+        // 明确标记过且版本旧 → 清空旧记录（含历史失败气泡）
         localStorage.removeItem(CHAT_KEY);
-        localStorage.setItem(CHAT_KEY + "_ver", CHAT_VER);
-        return [];
       }
+      // 无论是否清空，写入当前版本；无标记（如云端恢复的数据）一律保留
+      localStorage.setItem(CHAT_KEY + "_ver", CHAT_VER);
       return JSON.parse(localStorage.getItem(CHAT_KEY)) || [];
     } catch (e) { return []; }
   }
-  function saveChat() { localStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-50))); }
+  function saveChat() {
+    localStorage.setItem(CHAT_KEY, JSON.stringify(history.slice(-50)));
+    if (window.__mintSync) window.__mintSync.schedule();
+  }
 
   function scrollBottom() { chatLog.scrollTop = chatLog.scrollHeight; }
 
