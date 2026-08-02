@@ -845,24 +845,72 @@
         alert("已清空"); location.reload();
       }
     });
-    // AI 对话开关（模块 2 可选智谱）
+    // AI 助手（模块 2：可选智谱）——Key 由用户填写、验证、自动隐藏
     var aiSwitch = $("set-ai-enabled");
     var aiTip = $("ai-state-tip");
-    function updateAiTip() {
-      if (!aiTip) return;
-      var on = localStorage.getItem("mint_ai_enabled") === "1";
-      aiTip.textContent = on
-        ? "当前：本地问答 + 对话式 AI（已开启）"
-        : "当前：本地智能问答（对话式 AI 未开启）";
+    var keyBox = $("zhipu-key-box");
+    var keyDone = $("zhipu-key-done");
+    var keyInput = $("set-zhipu-key");
+    var keySave = $("set-zhipu-key-save");
+    var keyEdit = $("set-zhipu-key-edit");
+    var modelRow = $("model-row");
+    var modelSel = $("set-zhipu-model");
+    var zhipuKeyStored = function () { return (localStorage.getItem("mint_zhipu_key") || "").length > 0; };
+    function refreshAiBox() {
+      var has = zhipuKeyStored();
+      if (keyBox) keyBox.style.display = has ? "none" : "block";
+      if (keyDone) keyDone.style.display = has ? "block" : "none";
+      if (modelRow) modelRow.style.display = has ? "block" : "none";
+      if (aiTip) aiTip.textContent = has
+        ? "当前：本地问答 + 对话式 AI（" + (localStorage.getItem("mint_zhipu_model") || "glm-4-flash") + "）"
+        : "当前：本地智能问答（对话式 AI 未配置）";
+    }
+    if (keySave) keySave.addEventListener("click", function () {
+      var k = (keyInput.value || "").trim();
+      if (!k) { alert("请先粘贴智谱 API Key"); return; }
+      keySave.disabled = true; keySave.textContent = "验证中…";
+      fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + k },
+        body: JSON.stringify({ model: "glm-4-flash", messages: [{ role: "user", content: "hi" }], max_tokens: 5 }),
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (d) {
+          keySave.disabled = false; keySave.textContent = "保存并验证";
+          if (d && d.choices && d.choices[0]) {
+            localStorage.setItem("mint_zhipu_key", k);
+            keyInput.value = "";
+            refreshAiBox();
+            alert("✅ Key 验证通过，已保存（不会再次显示）");
+          } else {
+            alert("❌ Key 无效：" + ((d.error && (d.error.message || d.error.code)) || "请检查是否复制完整"));
+          }
+        })
+        .catch(function () {
+          keySave.disabled = false; keySave.textContent = "保存并验证";
+          alert("❌ 网络异常，无法连接智谱验证，请稍后再试");
+        });
+    });
+    if (keyEdit) keyEdit.addEventListener("click", function () {
+      localStorage.removeItem("mint_zhipu_key");
+      refreshAiBox();
+      if (keyInput) keyInput.focus();
+    });
+    if (modelSel) {
+      modelSel.value = localStorage.getItem("mint_zhipu_model") || "glm-4-flash";
+      modelSel.addEventListener("change", function () {
+        localStorage.setItem("mint_zhipu_model", modelSel.value);
+        refreshAiBox();
+      });
     }
     if (aiSwitch) {
       aiSwitch.checked = localStorage.getItem("mint_ai_enabled") === "1";
       aiSwitch.addEventListener("change", function () {
         localStorage.setItem("mint_ai_enabled", aiSwitch.checked ? "1" : "0");
-        updateAiTip();
+        refreshAiBox();
       });
-      updateAiTip();
     }
+    refreshAiBox();
   }
   function updateSidebarUser() {
     var user = getUser();
